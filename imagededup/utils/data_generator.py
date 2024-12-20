@@ -4,7 +4,6 @@ from typing import Dict, Callable, Optional, List, Tuple
 import numpy as np
 import torch
 from torch.utils.data import Dataset, DataLoader
-from torchvision import models
 
 from imagededup.utils.image_utils import load_image
 from imagededup.utils.general_utils import generate_files
@@ -55,23 +54,11 @@ def img_dataloader(
     batch_size: int,
     basenet_preprocess: Callable[[np.array], torch.tensor],
     recursive: Optional[bool],
+    num_workers: int
 ) -> DataLoader:
     img_dataset = ImgDataset(
         image_dir=image_dir, basenet_preprocess=basenet_preprocess, recursive=recursive
     )
     return DataLoader(
-        dataset=img_dataset, batch_size=batch_size, collate_fn=_collate_fn
+        dataset=img_dataset, batch_size=batch_size, collate_fn=_collate_fn, num_workers=num_workers
     )
-
-
-class MobilenetV3(torch.nn.Module):
-    def __init__(self) -> None:
-        super().__init__()
-        mobilenet = models.mobilenet_v3_small(pretrained=True).eval()
-        self.mobilenet_gap_op = torch.nn.Sequential(
-            mobilenet.features, mobilenet.avgpool
-        )
-
-    def forward(self, x) -> torch.tensor:
-        return self.mobilenet_gap_op(x)
-
